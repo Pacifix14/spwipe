@@ -5,6 +5,9 @@
 import "./src/env.js";
 
 /** @type {import("next").NextConfig} */
-const config = {};
+const config = {
+  allowedDevOrigins: ["a2f283186914.ngrok-free.app"],
+  serverExternalPackages: ["@auth/prisma-adapter"],
+};
 
 export default config;
