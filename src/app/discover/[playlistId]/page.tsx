@@ -25,6 +25,16 @@ interface Track {
   apple_music_id?: string;
 }
 
+interface RecommendationResponse {
+  tracks: Track[];
+  originalPlaylist?: {
+    id: string;
+    name: string;
+    description: string | null;
+    total_tracks: number;
+  };
+}
+
 interface SwipeStats {
   likes: number;
   passes: number;
@@ -66,7 +76,7 @@ function DiscoverLiquidBackground() {
       </motion.div>
 
       {/* Floating particles */}
-      {[...Array(15)].map((_, i) => (
+      {Array.from({ length: 15 }, (_, i) => (
         <motion.div
           key={i}
           className="absolute w-1 h-1 bg-green-400/30 rounded-full backdrop-blur-sm"
@@ -131,7 +141,7 @@ function LoadingAnimation() {
 
       {/* Pulsing dots */}
       <div className="flex justify-center space-x-2 mb-6">
-        {[...Array(3)].map((_, i) => (
+        {Array.from({ length: 3 }, (_, i) => (
           <motion.div
             key={i}
             className="w-3 h-3 bg-green-400 rounded-full"
@@ -171,12 +181,14 @@ export default function DiscoverPage() {
   const audioRef = useRef<HTMLAudioElement | null>(null);
 
   // Fetch recommendations based on playlist
-  const { data: recommendations, isLoading, error } = api.recommendations.getByPlaylist.useQuery({
+  const { data, isLoading, error } = api.recommendations.getByPlaylist.useQuery({
     playlistId,
     limit: 50
   });
+  
+  const recommendations = data as RecommendationResponse | undefined;
 
-  const tracks = recommendations?.tracks || [];
+  const tracks = recommendations?.tracks ?? [];
   const currentTrack = tracks[currentTrackIndex];
 
   // Audio playback functions
@@ -211,14 +223,14 @@ export default function DiscoverPage() {
   };
 
   const handleTimeUpdate = () => {
-    const audio = audioRef.current || currentAudio;
+    const audio = audioRef.current ?? currentAudio;
     if (audio && !isDragging) {
       setCurrentTime(audio.currentTime);
     }
   };
 
   const handleLoadedMetadata = () => {
-    const audio = audioRef.current || currentAudio;
+    const audio = audioRef.current ?? currentAudio;
     if (audio) {
       setDuration(audio.duration);
     }
@@ -229,7 +241,7 @@ export default function DiscoverPage() {
     setCurrentTime(0);
   };
 
-  const handleAudioError = (e: any) => {
+  const handleAudioError = (e: Event) => {
     console.error('Audio error:', e);
     setAudioError("Audio playback failed");
     setIsPlaying(false);
@@ -279,9 +291,9 @@ export default function DiscoverPage() {
     audio.addEventListener('canplaythrough', () => {
       // Only play if this is still the current audio
       if (audioRef.current === audio) {
-        audio.play().catch(error => {
+        audio.play().catch((error: unknown) => {
           console.error('Audio play failed:', error);
-          setAudioError("Could not play audio - " + error.message);
+          setAudioError("Could not play audio - " + (error instanceof Error ? error.message : 'Unknown error'));
         });
       }
     });
@@ -305,7 +317,7 @@ export default function DiscoverPage() {
   const togglePlayPause = () => {
     if (!currentTrack) return;
     
-    const audio = audioRef.current || currentAudio;
+    const audio = audioRef.current ?? currentAudio;
     
     if (isPlaying && audio) {
       audio.pause();
@@ -320,7 +332,7 @@ export default function DiscoverPage() {
   };
 
   const handleSeek = (seekTime: number) => {
-    const audio = audioRef.current || currentAudio;
+    const audio = audioRef.current ?? currentAudio;
     if (audio) {
       audio.currentTime = seekTime;
       setCurrentTime(seekTime);
@@ -415,7 +427,7 @@ export default function DiscoverPage() {
     generatePlaylist.mutate({
       name: `Spwipe Discovery - ${new Date().toLocaleDateString()}`,
       trackIds: likedTracks.map(track => track.id),
-      description: `Generated from ${recommendations?.originalPlaylist?.name || "playlist"} with ${likedTracks.length} liked tracks`
+      description: `Generated from ${recommendations?.originalPlaylist?.name ?? "playlist"} with ${likedTracks.length} liked tracks`
     });
   };
 
@@ -453,6 +465,27 @@ export default function DiscoverPage() {
                   <h2 className="text-2xl md:text-3xl font-bold mb-4 bg-gradient-to-r from-white via-green-200 to-white bg-clip-text text-transparent">
                     🎵 Analyzing Your Playlist
                   </h2>
+                  
+                  {recommendations?.originalPlaylist && (
+                    <motion.div
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: 0.3 }}
+                      className="mb-4"
+                    >
+                      <p className="text-green-400 font-medium text-lg">
+                        {recommendations.originalPlaylist.name}
+                      </p>
+                      {recommendations.originalPlaylist.description && (
+                        <p className="text-gray-400 text-sm mt-1">
+                          {recommendations.originalPlaylist.description}
+                        </p>
+                      )}
+                      <p className="text-gray-500 text-sm mt-1">
+                        {recommendations.originalPlaylist.total_tracks} tracks
+                      </p>
+                    </motion.div>
+                  )}
                   
                   <motion.p
                     className="text-gray-300 text-lg mb-6"
@@ -537,7 +570,7 @@ export default function DiscoverPage() {
                 </h1>
                 
                 <p className="text-gray-300 mb-8 text-lg leading-relaxed">
-                  {error.message}
+                  {error instanceof Error ? error.message : 'An unexpected error occurred'}
                 </p>
                 
                 <motion.button

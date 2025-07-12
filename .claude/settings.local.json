@@ -11,7 +11,8 @@
       "Bash(npm run dev:*)",
       "Bash(rm:*)",
       "WebFetch(domain:www.reactbits.dev)",
-      "WebFetch(domain:github.com)"
+      "WebFetch(domain:github.com)",
+      "Bash(bunx prisma:*)"
     ],
     "deny": []
   }

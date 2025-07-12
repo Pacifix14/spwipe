@@ -3,9 +3,104 @@
 
 generator client {
     provider = "prisma-client-js"
+    previewFeatures = ["postgresqlExtensions"]
 }
 
 datasource db {
     provider = "postgresql"
     url      = env("DATABASE_URL")
+    extensions = [vector]
+}
+
+model Song {
+    id                String   @id @default(cuid())
+    spotifyId         String   @unique
+    name              String
+    artist            String
+    album             String
+    imageUrl          String?
+    previewUrl        String?
+    externalUrls      Json
+    
+    // Audio Features
+    acousticness      Float
+    danceability      Float
+    energy            Float
+    instrumentalness  Float
+    liveness          Float
+    loudness          Float
+    speechiness       Float
+    tempo             Float
+    valence           Float
+    mode              Int      // 0 = minor, 1 = major
+    key               Int      // 0-11 musical keys
+    timeSignature     Int
+    
+    // Metadata
+    popularity        Int
+    releaseDate       DateTime?
+    durationMs        Int
+    genres            String[]
+    
+    // Vector Embeddings (stored as JSON arrays for now)
+    audioFeatureVector    Json?  // 12D vector for audio features
+    genreVector          Json?   // 50D vector for genre embeddings
+    combinedVector       Json?   // 128D combined feature vector
+    
+    createdAt         DateTime @default(now())
+    updatedAt         DateTime @updatedAt
+    
+    @@index([spotifyId])
+    @@index([artist])
+    @@index([genres])
+    @@index([popularity])
+}
+
+model PlaylistAnalysis {
+    id                String   @id @default(cuid())
+    spotifyPlaylistId String   @unique
+    name              String
+    description       String?
+    
+    // Aggregated features from playlist tracks
+    avgAcousticness      Float
+    avgDanceability      Float
+    avgEnergy            Float
+    avgInstrumentalness  Float
+    avgLiveness          Float
+    avgLoudness          Float
+    avgSpeechiness       Float
+    avgTempo             Float
+    avgValence           Float
+    avgPopularity        Float
+    
+    // Dominant characteristics
+    dominantGenres       String[]
+    dominantKey          Int?
+    dominantMode         Int?
+    dominantTimeSignature Int?
+    
+    // Playlist vector for similarity search (stored as JSON array for now)
+    playlistVector       Json?
+    
+    trackCount           Int
+    totalDurationMs      BigInt
+    
+    createdAt         DateTime @default(now())
+    updatedAt         DateTime @updatedAt
+    
+    @@index([spotifyPlaylistId])
+    @@index([dominantGenres])
+}
+
+model SimilarityCache {
+    id                String   @id @default(cuid())
+    sourcePlaylistId  String
+    targetSongId      String
+    similarityScore   Float
+    
+    createdAt         DateTime @default(now())
+    
+    @@unique([sourcePlaylistId, targetSongId])
+    @@index([sourcePlaylistId, similarityScore])
 }
