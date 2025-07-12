@@ -129,7 +129,7 @@ function FloatingMusicElements() {
 }
 
 // Glass Card Component
-function GlassCard({ children, className = "", delay = 0, ...props }) {
+function GlassCard({ children, className = "", delay = 0, ...props }: { children: React.ReactNode; className?: string; delay?: number; [key: string]: unknown }) {
   return (
     <motion.div
       initial={{ opacity: 0, y: 20, scale: 0.95 }}
@@ -180,7 +180,7 @@ export default function HomePage() {
   };
 
   const extractPlaylistId = (url: string) => {
-    const match = url.match(/playlist\/([a-zA-Z0-9]+)/);
+    const match = /playlist\/([a-zA-Z0-9]+)/.exec(url);
     return match ? match[1] : null;
   };
 
@@ -377,14 +377,14 @@ export default function HomePage() {
               transition={{ delay: 1.5 }}
               className="mt-8 text-center space-y-3"
             >
-              <p className="text-gray-400 text-base">Don't have a playlist ready?</p>
+              <p className="text-gray-400 text-base">Don&apos;t have a playlist ready?</p>
               <motion.button
                 onClick={handleExampleClick}
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
                 className="bg-white/5 hover:bg-white/10 backdrop-blur-xl border border-white/20 hover:border-green-400/30 text-green-400 hover:text-green-300 px-6 py-3 rounded-xl transition-all duration-300 font-medium"
               >
-                ✨ Try with Today's Top Hits
+                ✨ Try with Today&apos;s Top Hits
               </motion.button>
             </motion.div>
           </GlassCard>
